@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/qml">
+        <file>Theme.qml</file>
+        <file>main.qml</file>
+        <file>GeoSwarmForm.qml</file>
+        <file>SettingsPanel.qml</file>
+        <file>StatusPanel.qml</file>
+        <file>PerformancePanel.qml</file>
+        <file>SimulatorPanel.qml</file>
+    </qresource>
+</RCC>

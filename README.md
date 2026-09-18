@@ -5,7 +5,7 @@ You can also find a set of smaller feature-focused samples in the [ArcGIS Maps S
 
 ### Demos
 
-* Placeholder
+* [Graphics Overlay Performance](PerformanceDemo_GraphicsOverlay/) - Benchmarks high-volume moving entities across graphics overlays in 2D and 3D views.
   
 ## Resources
 
