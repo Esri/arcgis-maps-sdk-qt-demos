@@ -11,13 +11,13 @@ You can also find a set of smaller feature-focused samples in the [ArcGIS Maps S
 
 Here is how you might utilize this repo:
 1. Fork or clone the repo.
-2. Open the CMakeLists.txt or .pro files in each subfolder
-3. Build and run the demo apps
+2. Open the CMakeLists.txt or .pro files in each subfolder.
+3. Build and run the demo apps.
 
 ## Requirements
 
-* Review and meet the ArcGIS Maps SDK for Qt [System requirements](https://developers.arcgis.com/qt/system-requirements/system-requirements-for-300-1/)
-* Follow the [Install and set up guide](https://developers.arcgis.com/qt/install-and-set-up/)
+* Review and meet the ArcGIS Maps SDK for Qt [System requirements](https://developers.arcgis.com/qt/system-requirements/system-requirements-for-300-1/).
+* Follow the [Install and set up guide](https://developers.arcgis.com/qt/install-and-set-up/).
 
 ## Resources
 
