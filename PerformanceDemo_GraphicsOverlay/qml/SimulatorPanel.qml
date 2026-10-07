@@ -18,7 +18,7 @@ import GeoSwarm.Theme
 
 // Free-floating, non-modal simulator dialog (toggled from GeoSwarmForm).
 Window {
-    id: root
+    id: simulatorPanel
 
     required property GenerationController controller
 
@@ -124,14 +124,14 @@ Window {
 
                     ColumnLayout {
                         id: symbolsCol
-                        property int dimWeightSum: root.controller
-                                                   ? (root.controller.dimWeightAir + root.controller.dimWeightGround
-                                                      + root.controller.dimWeightSea + root.controller.dimWeightSub)
+                        property int dimWeightSum: simulatorPanel.controller
+                                                   ? (simulatorPanel.controller.dimWeightAir + simulatorPanel.controller.dimWeightGround
+                                                      + simulatorPanel.controller.dimWeightSea + simulatorPanel.controller.dimWeightSub)
                                                    : 0
                         width: symbolsScroll.availableWidth
 
                         function dimPct(w: int): int {
-                            if (!root.controller || dimWeightSum <= 0) {
+                            if (!simulatorPanel.controller || dimWeightSum <= 0) {
                                 return 25;
                             }
                             return Math.round(100 * w / dimWeightSum);
@@ -174,7 +174,7 @@ Window {
                                     Slider {
                                         from: 0; to: 100; stepSize: 1
                                         value: weight
-                                        enabled: !(root.controller && root.controller.running)
+                                        enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                         Layout.fillWidth: true
                                         onMoved: parent.weightAdjusted(value);
                                     }
@@ -202,45 +202,45 @@ Window {
 
                                 DimRow {
                                     dimLabel: qsTr("Air")
-                                    weight: root.controller ? root.controller.dimWeightAir : 1
+                                    weight: simulatorPanel.controller ? simulatorPanel.controller.dimWeightAir : 1
                                     pct: symbolsCol.dimPct(weight)
                                     Layout.fillWidth: true
                                     onWeightAdjusted: (v) => {
-                                                          if (root.controller) {
-                                                              root.controller.dimWeightAir = v;
+                                                          if (simulatorPanel.controller) {
+                                                              simulatorPanel.controller.dimWeightAir = v;
                                                           }
                                                       }
                                 }
                                 DimRow {
                                     dimLabel: qsTr("Ground")
-                                    weight: root.controller ? root.controller.dimWeightGround : 1
+                                    weight: simulatorPanel.controller ? simulatorPanel.controller.dimWeightGround : 1
                                     pct: symbolsCol.dimPct(weight)
                                     Layout.fillWidth: true
                                     onWeightAdjusted: (v) => {
-                                                          if (root.controller) {
-                                                              root.controller.dimWeightGround = v;
+                                                          if (simulatorPanel.controller) {
+                                                              simulatorPanel.controller.dimWeightGround = v;
                                                           }
                                                       }
                                 }
                                 DimRow {
                                     dimLabel: qsTr("Sea")
-                                    weight: root.controller ? root.controller.dimWeightSea : 1
+                                    weight: simulatorPanel.controller ? simulatorPanel.controller.dimWeightSea : 1
                                     pct: symbolsCol.dimPct(weight)
                                     Layout.fillWidth: true
                                     onWeightAdjusted: (v) => {
-                                                          if (root.controller) {
-                                                              root.controller.dimWeightSea = v;
+                                                          if (simulatorPanel.controller) {
+                                                              simulatorPanel.controller.dimWeightSea = v;
                                                           }
                                                       }
                                 }
                                 DimRow {
                                     dimLabel: qsTr("Subsurface")
-                                    weight: root.controller ? root.controller.dimWeightSub : 1
+                                    weight: simulatorPanel.controller ? simulatorPanel.controller.dimWeightSub : 1
                                     pct: symbolsCol.dimPct(weight)
                                     Layout.fillWidth: true
                                     onWeightAdjusted: (v) => {
-                                                          if (root.controller) {
-                                                              root.controller.dimWeightSub = v;
+                                                          if (simulatorPanel.controller) {
+                                                              simulatorPanel.controller.dimWeightSub = v;
                                                           }
                                                       }
                                 }
@@ -292,13 +292,13 @@ Window {
                                     }
                                     Slider {
                                         id: jitterSlider
-                                        from: 0.0; to: 0.5; stepSize: 0.005
-                                        value: root.controller ? root.controller.headingJitter : 0.05
-                                        enabled: !(root.controller && root.controller.running)
+                                        from: 0.0; to: 0.02; stepSize: 0.0005
+                                        value: simulatorPanel.controller ? simulatorPanel.controller.headingJitter : 0.005
+                                        enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                         Layout.fillWidth: true
                                         onMoved: {
-                                            if (root.controller) {
-                                                root.controller.headingJitter = value;
+                                            if (simulatorPanel.controller) {
+                                                simulatorPanel.controller.headingJitter = value;
                                             }
                                         }
                                     }
@@ -331,12 +331,12 @@ Window {
                                         Layout.fillWidth: true
                                         from: 1.0; to: 2000.0
                                         stepSize: 0
-                                        value: root.controller ? root.controller.motionScale : 200.0
-                                        enabled: !(root.controller && root.controller.running)
+                                        value: simulatorPanel.controller ? simulatorPanel.controller.motionScale : 200.0
+                                        enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                         onMoved: {
                                             const snapped = Math.max(Math.round(value / 10.0) * 10.0, 1.0);
-                                            if (root.controller) {
-                                                root.controller.motionScale = snapped;
+                                            if (simulatorPanel.controller) {
+                                                simulatorPanel.controller.motionScale = snapped;
                                             }
                                         }
                                     }
@@ -378,7 +378,7 @@ Window {
                                     columnSpacing: 12
 
                                     Repeater {
-                                        model: root.flagDefs
+                                        model: simulatorPanel.flagDefs
                                         delegate: CheckBox {
                                             id: attrCheck
                                             required property var modelData
@@ -394,19 +394,19 @@ Window {
                                                 leftPadding: attrCheck.indicator.width + attrCheck.spacing
                                                 verticalAlignment: Text.AlignVCenter
                                             }
-                                            checked: root.controller ? !!(root.controller.flags & (1 << modelData.bit)) : modelData.defaultOn
-                                            enabled: !(root.controller && root.controller.running)
+                                            checked: simulatorPanel.controller ? !!(simulatorPanel.controller.flags & (1 << modelData.bit)) : modelData.defaultOn
+                                            enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                             onToggled: {
-                                                if (!root.controller) {
+                                                if (!simulatorPanel.controller) {
                                                     return;
                                                 }
 
                                                 const mask = (1 << modelData.bit);
                                                 if (checked) {
-                                                    root.controller.flags = root.controller.flags | mask;
+                                                    simulatorPanel.controller.flags = simulatorPanel.controller.flags | mask;
                                                 }
                                                 else {
-                                                    root.controller.flags = root.controller.flags & ~mask;
+                                                    simulatorPanel.controller.flags = simulatorPanel.controller.flags & ~mask;
                                                 }
                                             }
                                         }
@@ -428,11 +428,11 @@ Window {
                                     }
                                     Item { Layout.fillWidth: true }
                                     Switch {
-                                        checked: root.controller ? root.controller.randomize : false
-                                        enabled: !(root.controller && root.controller.running)
+                                        checked: simulatorPanel.controller ? simulatorPanel.controller.randomize : false
+                                        enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                         onToggled: {
-                                            if (root.controller) {
-                                                root.controller.randomize = checked;
+                                            if (simulatorPanel.controller) {
+                                                simulatorPanel.controller.randomize = checked;
                                             }
                                         }
                                     }
@@ -482,21 +482,21 @@ Window {
                                 SpinBox {
                                     id: entityCountSpin
                                     from: 1; to: 1000000; stepSize: 100; editable: true
-                                    value: root.controller ? root.controller.entityCount : 10000
-                                    enabled: !(root.controller && root.controller.running)
+                                    value: simulatorPanel.controller ? simulatorPanel.controller.entityCount : 10000
+                                    enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                     Layout.fillWidth: true
 
                                     function commitValue() {
                                         const parsedValue = Number(contentItem.text.split(locale.groupSeparator).join(""));
-                                        if (root.controller && Number.isNaN(parsedValue) === false
+                                        if (simulatorPanel.controller && Number.isNaN(parsedValue) === false
                                                 && parsedValue >= from && parsedValue <= to) {
-                                            root.controller.entityCount = parsedValue;
+                                            simulatorPanel.controller.entityCount = parsedValue;
                                         }
                                     }
 
                                     onValueModified: {
-                                        if (root.controller) {
-                                            root.controller.entityCount = value;
+                                        if (simulatorPanel.controller) {
+                                            simulatorPanel.controller.entityCount = value;
                                         }
                                     }
                                 }
@@ -512,21 +512,21 @@ Window {
                                 SpinBox {
                                     id: targetObsPerSecSpin
                                     from: 1; to: 5000000; stepSize: 1000; editable: true
-                                    value: root.controller ? root.controller.targetObsPerSec : 100000
-                                    enabled: !(root.controller && root.controller.running)
+                                    value: simulatorPanel.controller ? simulatorPanel.controller.targetObsPerSec : 100000
+                                    enabled: !(simulatorPanel.controller && simulatorPanel.controller.running)
                                     Layout.fillWidth: true
 
                                     function commitValue() {
                                         const parsedValue = Number(contentItem.text.split(locale.groupSeparator).join(""));
-                                        if (root.controller && Number.isNaN(parsedValue) === false
+                                        if (simulatorPanel.controller && Number.isNaN(parsedValue) === false
                                                 && parsedValue >= from && parsedValue <= to) {
-                                            root.controller.targetObsPerSec = parsedValue;
+                                            simulatorPanel.controller.targetObsPerSec = parsedValue;
                                         }
                                     }
 
                                     onValueModified: {
-                                        if (root.controller) {
-                                            root.controller.targetObsPerSec = value;
+                                        if (simulatorPanel.controller) {
+                                            simulatorPanel.controller.targetObsPerSec = value;
                                         }
                                     }
                                 }
@@ -561,7 +561,7 @@ Window {
                                     }
                                 }
                                 Text {
-                                    text: root.controller ? root.controller.obsPerSec.toFixed(0) : "0"
+                                    text: simulatorPanel.controller ? simulatorPanel.controller.obsPerSec.toFixed(0) : "0"
                                     color: Theme.textPrimary
                                     font {
                                         family: Theme.fontMono
@@ -578,7 +578,7 @@ Window {
                                     }
                                 }
                                 Text {
-                                    text: root.controller ? root.controller.passesPerSecActual.toFixed(2) : "0"
+                                    text: simulatorPanel.controller ? simulatorPanel.controller.passesPerSecActual.toFixed(2) : "0"
                                     color: Theme.textPrimary
                                     font {
                                         family: Theme.fontMono
@@ -595,7 +595,7 @@ Window {
                                     }
                                 }
                                 Text {
-                                    text: root.controller ? root.controller.generateUs.toFixed(2) : "0"
+                                    text: simulatorPanel.controller ? simulatorPanel.controller.generateUs.toFixed(2) : "0"
                                     color: Theme.textPrimary
                                     font {
                                         family: Theme.fontMono
@@ -612,7 +612,7 @@ Window {
                                     }
                                 }
                                 Text {
-                                    text: root.controller ? root.controller.publishUs.toFixed(2) : "0"
+                                    text: simulatorPanel.controller ? simulatorPanel.controller.publishUs.toFixed(2) : "0"
                                     color: Theme.textPrimary
                                     font {
                                         family: Theme.fontMono
@@ -631,7 +631,7 @@ Window {
 
                 Button {
                     id: startStopButton
-                    text: root.controller && root.controller.running ? qsTr("Stop") : qsTr("Start")
+                    text: simulatorPanel.controller && simulatorPanel.controller.running ? qsTr("Stop") : qsTr("Start")
                     anchors {
                         left: parent.left
                         right: parent.right
@@ -647,17 +647,17 @@ Window {
                         }
                     }
                     onClicked: {
-                        if (!root.controller) {
+                        if (!simulatorPanel.controller) {
                             return;
                         }
 
-                        if (root.controller.running) {
-                            root.controller.stop();
+                        if (simulatorPanel.controller.running) {
+                            simulatorPanel.controller.stop();
                         }
                         else {
                             entityCountSpin.commitValue();
                             targetObsPerSecSpin.commitValue();
-                            root.controller.start();
+                            simulatorPanel.controller.start();
                         }
                     }
                 }

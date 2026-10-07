@@ -15,8 +15,6 @@ import QtQuick
 
 // Shared design tokens (fonts, colors, metrics) for the dark UI.
 QtObject {
-    id: root
-
     // Fonts
     readonly property string fontUi: "Segoe UI, Helvetica, Arial, sans-serif"
     readonly property string fontMono: "Consolas, Courier New, monospace"

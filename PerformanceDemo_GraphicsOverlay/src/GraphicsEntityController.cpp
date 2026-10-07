@@ -27,6 +27,7 @@
 #include <QVariantMap>
 #include <QtConcurrentRun>
 
+#include <cmath>
 #include <utility>
 
 using namespace Esri::ArcGISRuntime;
@@ -54,6 +55,11 @@ static QString fixedTwoDecimalText(double value)
   return QString::number(value, 'f', 2);
 }
 
+static double twoDecimalNumber(double value)
+{
+  return std::round(value * 100.0) / 100.0;
+}
+
 template<typename Sink>
 static void putAttributes(Sink&& put, const Observation& observation, bool locationOnly, bool includeId = true, quint16 liveMask = ObsFlags::kAll)
 {
@@ -72,7 +78,7 @@ static void putAttributes(Sink&& put, const Observation& observation, bool locat
   }
   if (flags & ObsFlags::DIRECTION)
   {
-    put(kKeyDirection, fixedTwoDecimalText(observation.direction));
+    put(kKeyDirection, twoDecimalNumber(observation.direction));
   }
   if (flags & ObsFlags::SPEED)
   {

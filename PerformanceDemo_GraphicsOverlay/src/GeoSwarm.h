@@ -43,7 +43,7 @@ class GeoSwarm : public QObject
   Q_PROPERTY(Esri::ArcGISRuntime::MapQuickView* mapView MEMBER m_mapView WRITE setMapView NOTIFY mapViewChanged)
   Q_PROPERTY(Esri::ArcGISRuntime::SceneQuickView* sceneView MEMBER m_sceneView WRITE setSceneView NOTIFY sceneViewChanged)
   Q_PROPERTY(bool sceneActive MEMBER m_sceneActive WRITE setSceneActive NOTIFY sceneActiveChanged)
-  Q_PROPERTY(bool useDictionarySymbols MEMBER m_useDictionarySymbols WRITE setUseDictionarySymbols NOTIFY useDictionarySymbolsChanged)
+  Q_PROPERTY(SymbolMode symbolMode MEMBER m_symbolMode WRITE setSymbolMode NOTIFY symbolModeChanged)
   Q_PROPERTY(bool locationOnly MEMBER m_locationOnly WRITE setLocationOnly NOTIFY locationOnlyChanged)
   Q_PROPERTY(double obsPerSec MEMBER m_obsPerSec NOTIFY statusChanged)
   Q_PROPERTY(double entityIntervalMs MEMBER m_entityIntervalMs NOTIFY statusChanged)
@@ -63,13 +63,22 @@ public:
 
   static constexpr int DimCount = static_cast<int>(Dim::Count);
 
+  // How entities are symbolized; values match the settings panel's segment order.
+  enum class SymbolMode
+  {
+    Dictionary = 0,
+    Simple = 1,
+    Model = 2
+  };
+  Q_ENUM(SymbolMode)
+
   explicit GeoSwarm(QObject* parent = nullptr);
   ~GeoSwarm() override;
 
   int entityCount() const;
 
   void setSceneActive(bool sceneActive);
-  void setUseDictionarySymbols(bool useDictionarySymbols);
+  void setSymbolMode(SymbolMode symbolMode);
   void setLocationOnly(bool locationOnly);
 
   Q_INVOKABLE void clearGraphics();
@@ -80,7 +89,7 @@ signals:
   void mapViewChanged();
   void sceneViewChanged();
   void sceneActiveChanged();
-  void useDictionarySymbolsChanged();
+  void symbolModeChanged();
   void locationOnlyChanged();
   void statusChanged();
 
@@ -90,6 +99,9 @@ private:
 
   void setupRenderers();
   void applyRenderer();
+
+  // Location Only omits modifier attributes, except in Model mode where direction is required.
+  bool shouldOmitModifierAttributes() const;
 
   // Pushes the apply mask/attribute flags that follow symbol and randomize state.
   void syncApplyConfig();
@@ -114,6 +126,7 @@ private:
   // One renderer instance per overlay;
   std::array<Esri::ArcGISRuntime::DictionaryRenderer*, DimCount> m_dictRenderers{};
   std::array<Esri::ArcGISRuntime::SimpleRenderer*, DimCount> m_simpleRenderers{};
+  std::array<Esri::ArcGISRuntime::SimpleRenderer*, DimCount> m_modelRenderers{};
 
   // Cached per-dimension visibility; survives a pool rebuild.
   std::array<bool, DimCount> m_layerVisible{{true, true, true, true}};
@@ -121,7 +134,7 @@ private:
   Esri::ArcGISRuntime::DictionarySymbolStyle* m_dictStyle = nullptr;
 
   bool m_sceneActive = false;
-  bool m_useDictionarySymbols = true;
+  SymbolMode m_symbolMode = SymbolMode::Dictionary;
   bool m_locationOnly = false;
 
   double m_obsPerSec = 0.0;
