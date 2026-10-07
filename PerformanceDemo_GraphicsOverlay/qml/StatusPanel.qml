@@ -17,7 +17,7 @@ import GeoSwarm
 import GeoSwarm.Theme
 
 Rectangle {
-    id: root
+    id: statusPanel
 
     required property GeoSwarm model
 
@@ -97,19 +97,19 @@ Rectangle {
 
             StatBlock {
                 label: qsTr("Graphic updates applied/sec")
-                value: root.model ? root.model.obsPerSec.toLocaleString(Qt.locale(), "f", 0) : "0"
+                value: statusPanel.model ? statusPanel.model.obsPerSec.toLocaleString(Qt.locale(), "f", 0) : "0"
                 big: true
             }
 
             // Per-entity refresh interval: 1000 * entityCount / obsPerSec.
             StatBlock {
                 label: qsTr("Update interval per entity")
-                value: root.model ? root.model.entityIntervalMs.toLocaleString(Qt.locale(), "f", 0) + " ms" : "0 ms"
+                value: statusPanel.model ? statusPanel.model.entityIntervalMs.toLocaleString(Qt.locale(), "f", 0) + " ms" : "0 ms"
             }
 
             StatBlock {
                 label: qsTr("Tracked entities")
-                value: root.model ? root.model.entityCount.toLocaleString(Qt.locale(), "f", 0) : "0"
+                value: statusPanel.model ? statusPanel.model.entityCount.toLocaleString(Qt.locale(), "f", 0) : "0"
             }
         }
     }

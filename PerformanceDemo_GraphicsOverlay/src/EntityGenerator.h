@@ -78,7 +78,7 @@ public:
 
     double altDefault = 0.0;
     float speedMps = 5.0F;
-    float headingJitterRadPerGenTick = 0.05F;
+    float headingJitterRadPerGenTick = 0.005F;
 
     // Visual speed multiplier; 0 = frozen.
     double motionScale = 200.0;

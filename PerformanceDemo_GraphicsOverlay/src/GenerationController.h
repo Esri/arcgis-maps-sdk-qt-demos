@@ -104,7 +104,7 @@ private:
   int m_targetObsPerSec = 100000;
   quint16 m_flags = 0;
   bool m_randomize = false;
-  double m_headingJitter = 0.05;
+  double m_headingJitter = 0.005;
   double m_motionScale = 200.0;
   int m_dimWeightAir = 1;
   int m_dimWeightGround = 1;

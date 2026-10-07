@@ -2,6 +2,10 @@
     <qresource prefix="/Resources">
         <file>AppIcon.png</file>
         <file>Symbols/mil2525c.stylx</file>
+        <file>Models/air_jet.glb</file>
+        <file>Models/ground_tank.glb</file>
+        <file>Models/sea_battleship.glb</file>
+        <file>Models/sub_submarine.glb</file>
     </qresource>
     <qresource prefix="/">
         <file>qtquickcontrols2.conf</file>

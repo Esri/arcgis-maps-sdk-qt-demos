@@ -16,16 +16,15 @@ import GeoSwarm
 import GeoSwarm.Theme
 
 Item {
-    id: root
+    id: geoSwarmForm
 
     property bool showScene: false
     property bool showPerformance: false
-    property bool useDictionarySymbols: true
     property bool locationOnly: false
     readonly property bool compactTopPanels: width < (statusPanel.implicitWidth + settingsPanel.implicitWidth + 36)
 
     function attachPerfMonitorWindow() {
-        perfMonitor.attachWindow(root.Window.window);
+        perfMonitor.attachWindow(geoSwarmForm.Window.window);
     }
 
     Component.onCompleted: attachPerfMonitorWindow()
@@ -34,24 +33,23 @@ Item {
     MapView {
         id: mapView
         anchors.fill: parent
-        focus: !root.showScene
-        visible: !root.showScene
+        focus: !geoSwarmForm.showScene
+        visible: !geoSwarmForm.showScene
     }
 
     SceneView {
         id: sceneView
         anchors.fill: parent
-        focus: root.showScene
-        visible: root.showScene
+        focus: geoSwarmForm.showScene
+        visible: geoSwarmForm.showScene
     }
 
     GeoSwarm {
         id: geoSwarmModel
         mapView: mapView
         sceneView: sceneView
-        sceneActive: root.showScene
-        useDictionarySymbols: root.useDictionarySymbols
-        locationOnly: root.locationOnly
+        sceneActive: geoSwarmForm.showScene
+        locationOnly: geoSwarmForm.locationOnly
     }
 
     PerformanceMonitor {
@@ -71,19 +69,17 @@ Item {
     SettingsPanel {
         id: settingsPanel
         model: geoSwarmModel
-        showScene: root.showScene
-        showPerformance: root.showPerformance
-        useDictionarySymbols: root.useDictionarySymbols
-        locationOnly: root.locationOnly
+        showScene: geoSwarmForm.showScene
+        showPerformance: geoSwarmForm.showPerformance
+        locationOnly: geoSwarmForm.locationOnly
         onClearGraphicsRequested: geoSwarmModel.clearGraphics();
-        onLocationOnlyRequested: (locationOnly) => root.locationOnly = locationOnly
-        onShowPerformanceRequested: (showPerformance) => root.showPerformance = showPerformance
-        onShowSceneRequested: (showScene) => root.showScene = showScene
-        onUseDictionarySymbolsRequested: (useDictionarySymbols) => root.useDictionarySymbols = useDictionarySymbols
+        onLocationOnlyRequested: (locationOnly) => geoSwarmForm.locationOnly = locationOnly
+        onShowPerformanceRequested: (showPerformance) => geoSwarmForm.showPerformance = showPerformance
+        onShowSceneRequested: (showScene) => geoSwarmForm.showScene = showScene
         anchors {
-            left: root.compactTopPanels ? parent.left : undefined
-            right: root.compactTopPanels ? undefined : parent.right
-            top: root.compactTopPanels ? statusPanel.bottom : parent.top
+            left: geoSwarmForm.compactTopPanels ? parent.left : undefined
+            right: geoSwarmForm.compactTopPanels ? undefined : parent.right
+            top: geoSwarmForm.compactTopPanels ? statusPanel.bottom : parent.top
             margins: 12
         }
     }
@@ -91,7 +87,7 @@ Item {
     PerformancePanel {
         id: performancePanel
         monitor: perfMonitor
-        visible: root.showPerformance
+        visible: geoSwarmForm.showPerformance
         anchors {
             left: parent.left
             bottom: parent.bottom

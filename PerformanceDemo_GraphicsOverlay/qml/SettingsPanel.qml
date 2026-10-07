@@ -17,14 +17,13 @@ import GeoSwarm
 import GeoSwarm.Theme
 
 Rectangle {
-    id: root
+    id: settingsPanel
 
     required property GeoSwarm model
 
     // Parent owns the source of truth; the panel reflects state and emits user intent.
     property bool showScene: false
     property bool showPerformance: false
-    property bool useDictionarySymbols: true
     property bool locationOnly: false
 
     // Layer visibility flags (toggling calls model.setLayerVisible directly).
@@ -36,7 +35,6 @@ Rectangle {
     signal clearGraphicsRequested()
     signal showSceneRequested(bool showScene)
     signal showPerformanceRequested(bool showPerformance)
-    signal useDictionarySymbolsRequested(bool useDictionarySymbols)
     signal locationOnlyRequested(bool locationOnly)
 
     // label + Switch, reused for the on/off toggles below.
@@ -48,6 +46,8 @@ Rectangle {
         property bool enabled: true
         signal toggled(bool on)
         spacing: 10
+        // The Fusion palette has no disabled colors, so dim the row instead.
+        opacity: trow.enabled ? 1.0 : 0.4
 
         Text {
             text: trow.label
@@ -65,6 +65,72 @@ Rectangle {
             enabled: trow.enabled
             Layout.alignment: Qt.AlignVCenter
             onToggled: trow.toggled(checked);
+        }
+    }
+
+    // Mutually exclusive buttons; the parent owns the selection and updates currentIndex.
+    component SegmentedControl: Rectangle {
+        id: segmented
+        property var labels: []
+        property int currentIndex: 0
+        signal activated(int index)
+
+        Layout.fillWidth: true
+        implicitHeight: 30
+        radius: 4
+        color: Theme.buttonBg
+        border.color: Theme.border
+        border.width: 1
+        clip: true
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 0
+
+            Repeater {
+                model: segmented.labels
+
+                delegate: Button {
+                    id: segment
+                    required property int index
+                    required property string modelData
+                    text: modelData
+                    checked: index === segmented.currentIndex
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: 1
+                    onClicked: segmented.activated(index);
+
+                    contentItem: Text {
+                        text: segment.text
+                        color: Theme.textPrimary
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font {
+                            family: Theme.fontUi
+                            pixelSize: 13
+                            bold: segment.checked
+                        }
+                    }
+
+                    background: Rectangle {
+                        color: segment.checked
+                               ? (segment.pressed ? Theme.primaryPressed : Theme.primary)
+                               : (segment.pressed ? Theme.buttonPressed
+                                                  : segment.hovered ? Theme.buttonHover
+                                                                    : Theme.buttonBg)
+                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                        // Divider between segments.
+                        Rectangle {
+                            visible: segment.index > 0
+                            width: 1
+                            height: parent.height
+                            color: Theme.border
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -218,8 +284,8 @@ Rectangle {
 
                         SegButton {
                             text: qsTr("Map")
-                            checked: !root.showScene
-                            onClicked: root.showSceneRequested(false);
+                            checked: !settingsPanel.showScene
+                            onClicked: settingsPanel.showSceneRequested(false);
                         }
 
                         Rectangle {
@@ -230,8 +296,8 @@ Rectangle {
 
                         SegButton {
                             text: qsTr("Scene")
-                            checked: root.showScene
-                            onClicked: root.showSceneRequested(true);
+                            checked: settingsPanel.showScene
+                            onClicked: settingsPanel.showSceneRequested(true);
                         }
                     }
                 }
@@ -241,20 +307,47 @@ Rectangle {
 
             ToggleRow {
                 label: qsTr("Show performance HUD")
-                checked: root.showPerformance
-                onToggled: (on) => root.showPerformanceRequested(on);
+                checked: settingsPanel.showPerformance
+                onToggled: (on) => settingsPanel.showPerformanceRequested(on);
             }
 
-            ToggleRow {
-                label: qsTr("Use MIL-2525C symbols")
-                checked: root.useDictionarySymbols
-                onToggled: (on) => root.useDictionarySymbolsRequested(on);
+            ColumnLayout {
+                spacing: 6
+                Layout.fillWidth: true
+
+                Text {
+                    text: qsTr("Symbols")
+                    color: Theme.textLabel
+                    font {
+                        family: Theme.fontUi
+                        pixelSize: 11
+                    }
+                }
+
+                SegmentedControl {
+                    labels: [qsTr("MIL-2525C"), qsTr("Simple"), qsTr("3D Models")]
+                    currentIndex: settingsPanel.model.symbolMode
+                    onActivated: (index) => settingsPanel.model.symbolMode = index;
+                }
+
+                Text {
+                    visible: settingsPanel.model.symbolMode === GeoSwarm.SymbolMode.Model && !settingsPanel.showScene
+                    text: qsTr("3D models show in the Scene view. The Map view uses MIL-2525C symbols.")
+                    color: Theme.textLabel
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                    font {
+                        family: Theme.fontUi
+                        pixelSize: 11
+                    }
+                }
             }
 
             ToggleRow {
                 label: qsTr("Show symbol modifiers")
-                checked: !root.locationOnly
-                onToggled: (on) => root.locationOnlyRequested(!on);
+                checked: !settingsPanel.locationOnly
+                enabled: settingsPanel.model.symbolMode === GeoSwarm.SymbolMode.Dictionary
+                onToggled: (on) => settingsPanel.locationOnlyRequested(!on);
             }
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
@@ -283,11 +376,11 @@ Rectangle {
                     delegate: ToggleRow {
                         required property var modelData
                         label: modelData.label
-                        checked: root[modelData.propName]
+                        checked: settingsPanel[modelData.propName]
                         onToggled: (on) => {
-                                       root[modelData.propName] = on;
-                                       if (root.model) {
-                                           root.model.setLayerVisible(modelData.dim, on);
+                                       settingsPanel[modelData.propName] = on;
+                                       if (settingsPanel.model) {
+                                           settingsPanel.model.setLayerVisible(modelData.dim, on);
                                        }
                                    }
                     }
@@ -330,7 +423,7 @@ Rectangle {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.clearGraphicsRequested();
+                    onClicked: settingsPanel.clearGraphicsRequested();
                 }
             }
         }

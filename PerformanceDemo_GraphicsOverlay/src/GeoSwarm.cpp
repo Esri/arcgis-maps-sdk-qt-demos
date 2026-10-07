@@ -28,13 +28,17 @@
 #include "Envelope.h"
 #include "GraphicsOverlay.h"
 #include "GraphicsOverlayListModel.h"
+#include "LayerSceneProperties.h"
 #include "Map.h"
 #include "MapQuickView.h"
 #include "MapTypes.h"
+#include "ModelSceneSymbol.h"
 #include "Point.h"
 #include "Renderer.h"
+#include "RendererSceneProperties.h"
 #include "Scene.h"
 #include "SceneQuickView.h"
+#include "SceneViewTypes.h"
 #include "SimpleMarkerSymbol.h"
 #include "SimpleRenderer.h"
 #include "SpatialReference.h"
@@ -46,6 +50,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QFuture>
 #include <QStandardPaths>
 #include <QTimer>
@@ -56,6 +61,15 @@ using namespace Esri::ArcGISRuntime;
 static_assert(GeoSwarm::DimCount == kDimCount, "GeoSwarm::DimCount must match kDimCount (battle dimensions)");
 
 static const QString kStylxResource = QStringLiteral(":/Resources/Symbols/mil2525c.stylx");
+
+// One model per battle dimension, in GeoSwarm::Dim order. The models are normalized
+// to a 1-unit length with the nose at heading 0 (see README).
+static const std::array<QString, GeoSwarm::DimCount> kModelResources{{QStringLiteral(":/Resources/Models/air_jet.glb"),
+                                                                      QStringLiteral(":/Resources/Models/ground_tank.glb"),
+                                                                      QStringLiteral(":/Resources/Models/sea_battleship.glb"),
+                                                                      QStringLiteral(":/Resources/Models/sub_submarine.glb")}};
+static constexpr float kModelSizeDips = 40.0F;
+
 static const QUrl kWorldElevationUrl =
   QUrl(QStringLiteral("https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"));
 static const QUrl kPublicBasemapUrl = QUrl(QStringLiteral("https://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer"));
@@ -86,22 +100,38 @@ static Scene* createScene(QObject* parent)
   return new Scene(new Basemap(layer, parent), parent);
 }
 
-static QString extractStylxToDisk()
+static QString extractResourceToDisk(const QString& resourcePath)
 {
   const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
   QDir().mkpath(dir);
-  QString out = dir + "/mil2525c.stylx";
+  QString out = dir + "/" + QFileInfo(resourcePath).fileName();
   if (QFile::exists(out))
   {
     QFile::remove(out);
   }
-  if (!QFile::copy(kStylxResource, out))
+  if (!QFile::copy(resourcePath, out))
   {
-    qWarning() << "Failed to extract stylx to" << out;
+    qWarning() << "Failed to extract" << resourcePath << "to" << out;
     return {};
   }
   QFile::setPermissions(out, QFile::ReadOwner | QFile::WriteOwner);
   return out;
+}
+
+// One shared model per overlay, rotated by the numeric direction attribute.
+static SimpleRenderer* createModelRenderer(int dim, QObject* parent)
+{
+  const QString modelPath = extractResourceToDisk(kModelResources.at(static_cast<std::size_t>(dim)));
+  auto* model = new ModelSceneSymbol(QUrl::fromLocalFile(modelPath), kModelSizeDips, parent);
+  model->setSymbolSizeUnits(SymbolSizeUnits::DIPs);
+  model->setAnchorPosition(SceneSymbolAnchorPosition::Bottom);
+
+  auto* renderer = new SimpleRenderer(model, parent);
+  model->setParent(renderer);
+  RendererSceneProperties sceneProperties = renderer->sceneProperties();
+  sceneProperties.setHeadingExpression(QStringLiteral("[direction]"));
+  renderer->setSceneProperties(sceneProperties);
+  return renderer;
 }
 
 GeoSwarm::GeoSwarm(QObject* parent /* = nullptr */) :
@@ -133,10 +163,11 @@ GeoSwarm::GeoSwarm(QObject* parent /* = nullptr */) :
     {
       m_dictRenderers.at(dimIndex) = new DictionaryRenderer(m_dictStyle, this);
     }
+    m_modelRenderers.at(dimIndex) = createModelRenderer(dim, this);
   }
   applyRenderer();
 
-  m_graphics->buildPool(m_generator->initialObservations(), m_locationOnly);
+  m_graphics->buildPool(m_generator->initialObservations(), shouldOmitModifierAttributes());
   syncApplyConfig();
 
   connect(m_generator, &GenerationController::randomizeChanged, this, &GeoSwarm::syncApplyConfig);
@@ -165,7 +196,7 @@ int GeoSwarm::entityCount() const
 
 void GeoSwarm::setupRenderers()
 {
-  const QString stylxPath = extractStylxToDisk();
+  const QString stylxPath = extractResourceToDisk(kStylxResource);
   m_dictStyle = DictionarySymbolStyle::createFromFile(stylxPath, this);
   if (!m_dictStyle)
   {
@@ -175,6 +206,8 @@ void GeoSwarm::setupRenderers()
 
 void GeoSwarm::applyRenderer()
 {
+  // Models only render in a scene; the map view falls back to MIL-2525C.
+  const bool showModels = m_symbolMode == SymbolMode::Model && m_sceneActive;
   for (int dim = 0; dim < DimCount; ++dim)
   {
     const auto dimIndex = static_cast<std::size_t>(dim);
@@ -183,21 +216,33 @@ void GeoSwarm::applyRenderer()
     {
       continue;
     }
-    Renderer* renderer = (m_useDictionarySymbols && m_dictRenderers.at(dimIndex)) ? static_cast<Renderer*>(m_dictRenderers.at(dimIndex)) :
-                                                                                    static_cast<Renderer*>(m_simpleRenderers.at(dimIndex));
+    const bool useDictionary = m_symbolMode != SymbolMode::Simple && m_dictRenderers.at(dimIndex);
+    Renderer* renderer = useDictionary ? static_cast<Renderer*>(m_dictRenderers.at(dimIndex)) : static_cast<Renderer*>(m_simpleRenderers.at(dimIndex));
+    if (showModels)
+    {
+      renderer = m_modelRenderers.at(dimIndex);
+    }
     overlay->setRenderer(renderer);
+
+    // Models sit at their altitude above the surface; other symbols keep the default draped placement.
+    overlay->setSceneProperties(LayerSceneProperties(showModels ? SurfacePlacement::Relative : SurfacePlacement::DrapedBillboarded));
   }
+}
+
+bool GeoSwarm::shouldOmitModifierAttributes() const
+{
+  return m_locationOnly && m_symbolMode != SymbolMode::Model;
 }
 
 void GeoSwarm::syncApplyConfig()
 {
-  m_graphics->setApplyAttributes(m_useDictionarySymbols && !m_locationOnly);
+  m_graphics->setApplyAttributes(m_symbolMode != SymbolMode::Simple && !shouldOmitModifierAttributes());
   m_graphics->setLiveMask(m_generator->randomize() ? ObsFlags::kAll : ObsFlags::DIRECTION);
 }
 
 void GeoSwarm::rebuildPool()
 {
-  m_graphics->buildPool(m_generator->initialObservations(), m_locationOnly);
+  m_graphics->buildPool(m_generator->initialObservations(), shouldOmitModifierAttributes());
 }
 
 void GeoSwarm::moveOverlaysToView(bool toScene)
@@ -267,16 +312,21 @@ bool GeoSwarm::layerVisible(int dim) const
   return m_layerVisible.at(static_cast<std::size_t>(dim));
 }
 
-void GeoSwarm::setUseDictionarySymbols(bool useDictionarySymbols)
+void GeoSwarm::setSymbolMode(SymbolMode symbolMode)
 {
-  if (useDictionarySymbols == m_useDictionarySymbols)
+  if (symbolMode == m_symbolMode)
   {
     return;
   }
-  m_useDictionarySymbols = useDictionarySymbols;
+  const bool previouslyOmittedModifierAttributes = shouldOmitModifierAttributes();
+  m_symbolMode = symbolMode;
+  if (shouldOmitModifierAttributes() != previouslyOmittedModifierAttributes)
+  {
+    rebuildPool();
+  }
   applyRenderer();
   syncApplyConfig();
-  emit useDictionarySymbolsChanged();
+  emit symbolModeChanged();
 }
 
 void GeoSwarm::setLocationOnly(bool locationOnly)
@@ -286,7 +336,7 @@ void GeoSwarm::setLocationOnly(bool locationOnly)
     return;
   }
   m_locationOnly = locationOnly;
-  m_graphics->buildPool(m_generator->initialObservations(), m_locationOnly);
+  rebuildPool();
   syncApplyConfig();
   emit locationOnlyChanged();
 }
@@ -339,6 +389,7 @@ void GeoSwarm::setSceneActive(bool sceneActive)
   }
   m_sceneActive = sceneActive;
   moveOverlaysToView(m_sceneActive);
+  applyRenderer();
   emit sceneActiveChanged();
 }
 

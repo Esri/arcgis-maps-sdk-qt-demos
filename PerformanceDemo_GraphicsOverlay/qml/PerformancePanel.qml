@@ -17,7 +17,7 @@ import GeoSwarm
 import GeoSwarm.Theme
 
 Rectangle {
-    id: root
+    id: performancePanel
 
     required property PerformanceMonitor monitor
 
@@ -127,8 +127,8 @@ Rectangle {
                 Item { Layout.fillWidth: true }
 
                 Text {
-                    text: root.monitor ? root.monitor.fps.toFixed(1) : "—"
-                    color: root.monitor ? root.fpsColor(root.monitor.fps, root.monitor.refreshRateHz) : Theme.textMuted
+                    text: performancePanel.monitor ? performancePanel.monitor.fps.toFixed(1) : "—"
+                    color: performancePanel.monitor ? performancePanel.fpsColor(performancePanel.monitor.fps, performancePanel.monitor.refreshRateHz) : Theme.textMuted
                     font {
                         family: Theme.fontMono
                         pixelSize: 16
@@ -160,7 +160,7 @@ Rectangle {
                     Item { Layout.fillWidth: true }
 
                     Text {
-                        text: root.monitor ? root.monitor.frameTimeMs.toFixed(1) + " ms" : "—"
+                        text: performancePanel.monitor ? performancePanel.monitor.frameTimeMs.toFixed(1) + " ms" : "—"
                         color: Theme.textPrimary
                         font {
                             family: Theme.fontMono
@@ -173,17 +173,17 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.leftMargin: 12
                     spacing: 4
-                    PhaseRow { label: qsTr("sync");   value: root.monitor ? root.monitor.syncMs.toFixed(2) + " ms" : "—" }
-                    PhaseRow { label: qsTr("render"); value: root.monitor ? root.monitor.renderMs.toFixed(2) + " ms" : "—" }
-                    PhaseRow { label: qsTr("swap");   value: root.monitor ? root.monitor.swapMs.toFixed(2) + " ms" : "—" }
+                    PhaseRow { label: qsTr("sync");   value: performancePanel.monitor ? performancePanel.monitor.syncMs.toFixed(2) + " ms" : "—" }
+                    PhaseRow { label: qsTr("render"); value: performancePanel.monitor ? performancePanel.monitor.renderMs.toFixed(2) + " ms" : "—" }
+                    PhaseRow { label: qsTr("swap");   value: performancePanel.monitor ? performancePanel.monitor.swapMs.toFixed(2) + " ms" : "—" }
                 }
             }
 
             Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
 
             Text {
-                visible: root.monitor && root.monitor.refreshRateHz > 0
-                text: root.monitor ? qsTr("target %1 Hz").arg(root.monitor.refreshRateHz.toFixed(0)) : ""
+                visible: performancePanel.monitor && performancePanel.monitor.refreshRateHz > 0
+                text: performancePanel.monitor ? qsTr("target %1 Hz").arg(performancePanel.monitor.refreshRateHz.toFixed(0)) : ""
                 color: Theme.textFaint
                 Layout.fillWidth: true
                 Layout.topMargin: 2

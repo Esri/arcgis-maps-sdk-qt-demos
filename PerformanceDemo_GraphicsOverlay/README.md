@@ -27,6 +27,7 @@ GeoSwarm is a Qt 6 / QML demo app that showcases **ArcGIS GraphicsOverlay perfor
 	- `SimulatorPanel.qml`: workload controls for entity count, target rate, battle-dimension mix, motion, and payload fields.
 - `Resources/`
 	- Includes the MIL-2525C style file used by the dictionary renderer.
+	- `Models/`: one low-poly glTF model per battle dimension, used by the 3D model symbol mode.
 
 ## What you can try
 
@@ -48,6 +49,18 @@ GeoSwarm is a Qt 6 / QML demo app that showcases **ArcGIS GraphicsOverlay perfor
 
 - This is a demo app for exploring graphics-overlay performance behavior, not a production-ready application.
 - The implementation is designed to demonstrate practical high-throughput overlay patterns: preallocation, in-place updates, off-thread generation, per-dimension batching, and keeping payloads small when possible.
+
+## 3D model credits
+
+The models in `Resources/Models` come from [Poly Pizza](https://poly.pizza).
+
+[Jet](https://poly.pizza/m/6fyLMORhgGK) by [jeremy](https://poly.pizza/u/jeremy) [[CC-BY](https://creativecommons.org/licenses/by/3.0/)] via Poly Pizza
+
+[Tank](https://poly.pizza/m/Dc4k4CooN3) by [Quaternius](https://poly.pizza/u/Quaternius)
+
+[Simple Battleship](https://poly.pizza/m/aYAmfkUYZjg) by [Thomas de Rivaz](https://poly.pizza/u/Thomas%20de%20Rivaz) [[CC-BY](https://creativecommons.org/licenses/by/3.0/)] via Poly Pizza
+
+[Submarine](https://poly.pizza/m/dfSQmeuuYt3) by [Poly by Google](https://poly.pizza/u/Poly%20by%20Google) [[CC-BY](https://creativecommons.org/licenses/by/3.0/)] via Poly Pizza
 
 ## ArcGIS authentication
 
